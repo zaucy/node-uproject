@@ -8,6 +8,7 @@ const regedit = require("regedit");
 
 // Constants
 const UE4_REGISTRY_PREFIX = "HKCU\\SOFTWARE\\Epic Games\\Unreal Engine";
+const UE4_REG_INSTALLS_PREFIX = "HKLM\\SOFTWARE\\EpicGames\\Unreal Engine";
 
 // Class that represents a .uproject
 class UProjectConfig {
@@ -32,13 +33,28 @@ class UProjectConfig {
 		return this._data.EngineAssociation;
 	}
 
-	getEngineDirectory() {
+	_findEngineDirectoryFromInstall() {
+		return new Promise((resolve, reject) => {
+			let installsRegisteryPath =
+				UE4_REG_INSTALLS_PREFIX + "\\" + this.engineAssociation;
 
+			regedit.arch.list(installsRegisteryPath)
+			.on('data', entry => {
+				let installDir = entry.data.values.InstalledDirectory.value;
+
+				resolve(installDir);
+			}).on('error', err => {
+				reject(err);
+			});
+		});
+	}
+
+	_findEngineDirectoryFromSource() {
 		return new Promise((resolve, reject) => {
 
 			let buildsRegistryPath = `${UE4_REGISTRY_PREFIX}\\Builds`;
 
-			regedit.list(
+			regedit.arch.list(
 				buildsRegistryPath,
 				(err, results) => {
 					if(err) {
@@ -59,6 +75,15 @@ class UProjectConfig {
 				}
 			);
 
+		});
+	}
+
+	getEngineDirectory() {
+		return Promise.race([
+			this._findEngineDirectoryFromInstall(),
+			this._findEngineDirectoryFromSource()
+		]).catch(err => {
+			reject(`Couldn't find associated engine.`);
 		});
 	}
 

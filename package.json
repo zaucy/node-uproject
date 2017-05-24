@@ -1,7 +1,7 @@
 {
   "name": "uproject",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.3",
+  "description": "Utility for parsing .uproject files allowing you to find the associated UE4 engine paths and other variables",
   "main": "src/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
